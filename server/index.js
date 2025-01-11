@@ -7,7 +7,7 @@ import authorganisationRoutes from './routes/organization.js';
 
 const app = express();
 
-dotenv.config();
+dotenv.config({ path: "./config/.env" });
 app.use('/uploads', express.static('uploads'));
 
 app.use(express.json());
