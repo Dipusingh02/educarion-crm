@@ -4,12 +4,13 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import authRoutes from './routes/auth.js'; 
 import authorganisationRoutes from './routes/organization.js';
+import bodyParser from "body-parser";
 
 const app = express();
 
 dotenv.config({ path: "./config/.env" });
 app.use('/uploads', express.static('uploads'));
-
+app.use(bodyParser.json());
 app.use(express.json());
 app.use(cors({
     origin: '*',

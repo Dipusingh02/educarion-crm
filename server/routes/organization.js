@@ -3,10 +3,10 @@ import { z } from "zod";
 import { organizationSchema, userSchema } from "../validation/schemas.js";
 import Organization from "../models/organization.js";
 import User from "../models/user.js";
+import * as authService from '../services/authService.js';
 
 const router = express.Router();
  
-
 router.post("/register-organization", async (req, res) => {
     try {
         const data = organizationSchema.parse(req.body);
@@ -27,6 +27,64 @@ router.post("/register-organization", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+router.get("/organization", async (req, res) => {
+    try {
+        const organizations = await Organization.find();
+        res.status(200).json(organizations);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+router.get("/organization/:id", async (req, res) => {
+    try {
+        const organization = await Organization.findById(req.params.id);
+        if (!organization) {
+            return res.status(404).json({ error: "Organization not found" });
+        }
+        res.status(200).json(organization);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+router.post("/login-organisation", async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        // Check if email and password are provided
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and password are required." });
+        }
+
+        // Find organization by email
+        const existingOrganization = await Organization.findOne({ email });
+        if (!existingOrganization) {
+            return res.status(400).json({ error: "Organization not found." });
+        }
+
+        // Verify password
+        const isPasswordMatch = await authService.comparePassword(password, existingOrganization.password);
+        if (!isPasswordMatch) {
+            return res.status(400).json({ error: "Invalid password." });
+        }
+
+        // Generate token
+        const token = await authService.generateToken(existingOrganization._id, process.env.JWT_SECRET_KEY);
+
+        // Respond with success
+        res.status(200).json({
+            message: "Organization logged in successfully.",
+            token,
+            organizationId: existingOrganization._id,
+            name: existingOrganization.name,
+            role: existingOrganization.role,
+        });
+    } catch (error) {
+        // Log and handle internal server errors
+        console.error("Error during login:", error.message);
+        res.status(500).json({ error: "Internal server error." });
+    }
+});
+
 
 router.post("/organisation/register-user-admin", async (req, res) => {
     try {
